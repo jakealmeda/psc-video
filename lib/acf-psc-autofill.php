@@ -25,7 +25,7 @@ function psc_layout_video_select( $field ) {
 
     // get all files found in VIEWS folder
     //$view_dir = get_stylesheet_directory().'/partials/views/';
-    $view_dir = psc_plugin_dir_path().'partials/videos/';
+    $view_dir = psc_plugin_dir_path_vids().'partials/videos/';
 
     $data_from_dir = setup_get_block_views( $view_dir, $file_extn );
 

@@ -14,15 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-include_once( 'lib/acf-psc-autofill.php' );
-include_once( 'lib/acf-psc-processor.php' );
-include_once( 'lib/acf-psc-func.php' );
-include_once( 'lib/acf-psc-hook.php' );
-
 
 // simply return this plugin's main directory
-function psc_plugin_dir_path() {
+function psc_plugin_dir_path_vids() {
 
     return plugin_dir_path( __FILE__ );
 
 }
+
+
+include_once( 'lib/acf-psc-autofill.php' );
+include_once( 'lib/acf-psc-processor.php' );
+include_once( 'lib/acf-psc-func.php' );
+include_once( 'lib/acf-psc-block.php' );

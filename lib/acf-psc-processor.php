@@ -24,6 +24,19 @@ class PSC_Pull_Entries {
 				// get info group
 				$vid_info = get_field( 'info', $cpid );
 
+				$vid_info_pic_size = $this->psc_val_arr_key( 'pic_size', $vid_info );
+
+				$vid_pic = $this->psc_val_arr_key( 'pic', $vid_info );
+				if( empty( $vid_pic ) ) {
+					$vid_pic = '';
+					$vid_pic_w = '';
+					$vid_pic_h = '';
+				} else {
+					$vid_pic = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size ];
+					$vid_pic_w = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size.'-width' ];
+					$vid_pic_h = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size.'-height' ];
+				}
+
 				// profile
 				$acf_profile = $this->psc_profiler( $vid_info[ 'profile' ] );
 
@@ -39,9 +52,9 @@ class PSC_Pull_Entries {
 						'{@acf_oembed}'				=> get_field( 'oembed', $cpid ),
 						'{@acf_title}'				=> $vid_info[ 'title' ],
 						'{@acf_summary}'			=> $vid_info[ 'summary' ],
-						'{@pic_src}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ] ],
-						'{@pic_width}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ].'-width' ],
-						'{@pic_height}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ].'-height' ],
+						'{@pic_src}'				=> $vid_pic,
+						'{@pic_width}'				=> $vid_pic_w,
+						'{@pic_height}'				=> $vid_pic_h,
 						'{@acf_profile}'			=> $acf_profile,
 						'{@acf_source}'				=> $acf_source,
 						'{@acf_links}'				=> $acf_links,
@@ -58,31 +71,30 @@ class PSC_Pull_Entries {
 		 * GET THE ENTRIES (TAXONOMY)
 		 */
 		$categ = $vars[ 'e_entries' ][ 'video-category' ];
-		if( !empty( $categ ) ) :		
+		if( !empty( $categ ) ) :
 
+			$max_count = $vars[ 'e_entries' ][ 'max_links_to_display' ];
 			$orderby = $vars[ 'e_entries' ][ 'order-by' ];
 			$order = $vars[ 'e_entries' ][ 'order' ];
 
 			// loop through the array
 			for( $t = 0; $t <= ( count( $categ ) - 1 ); $t++ ) {
-
-				$ppp = -1;
+				//echo '<h1>'.$categ[ $t ].'</h1>';
+				//$ppp = -1;
+				$maxout = 0;
 
 				$args = array(
-					'post_type' 		=> 'video_entry',
+					'post_type' 		=> 'video',
 					'post_status' 		=> 'publish',
-					'posts_per_page' 	=> $ppp,
+		//			'posts_per_page' 	=> $ppp,
 		//			'post__not_in' 		=> $not_in,
 					'orderby' 			=> $orderby,
 		    		'order'   			=> $order,
-		    		array(
-						'taxonomy' => 'video_category',
-						'field' => 'term_id',
-						'terms' => $categ[ $t ],
-						)
-					);
-				
-				
+					'tax_query' => array(
+						array( 'taxonomy' => 'video_tag', 'field' => 'term_id', 'terms' => $categ[ $t ] )
+					),
+				);
+
 				// query
 				$loop = new WP_Query( $args );
 				
@@ -91,10 +103,26 @@ class PSC_Pull_Entries {
 
 					// get all post IDs
 					while( $loop->have_posts() ): $loop->the_post();
+
+						$maxout++;
 						
 						// get info group
 						$vid_info = get_field( 'info', get_the_ID() );
 
+						// $key, $array
+						$vid_info_pic_size = $this->psc_val_arr_key( 'pic_size', $vid_info );
+
+						$vid_pic = $this->psc_val_arr_key( 'pic', $vid_info );
+						if( empty( $vid_pic ) ) {
+							$vid_pic = '';
+							$vid_pic_w = '';
+							$vid_pic_h = '';
+						} else {
+							$vid_pic = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size ];
+							$vid_pic_w = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size.'-width' ];
+							$vid_pic_h = $vid_info[ 'pic' ][ 'sizes' ][ $vid_info_pic_size.'-height' ];
+						}
+						
 						// profile
 						$acf_profile = $this->psc_profiler( $vid_info[ 'profile' ] );
 
@@ -110,9 +138,9 @@ class PSC_Pull_Entries {
 								'{@acf_oembed}'				=> get_field( 'oembed', get_the_ID() ),
 								'{@acf_title}'				=> $vid_info[ 'title' ],
 								'{@acf_summary}'			=> $vid_info[ 'summary' ],
-								'{@pic_src}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ] ],
-								'{@pic_width}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ].'-width' ],
-								'{@pic_height}'				=> $vid_info[ 'pic' ][ 'sizes' ][ $vid_info[ 'pic_size' ].'-height' ],
+								'{@pic_src}'				=> $vid_pic,
+								'{@pic_width}'				=> $vid_pic_w,
+								'{@pic_height}'				=> $vid_pic_h,
 								'{@acf_profile}'			=> $acf_profile,
 								'{@acf_source}'				=> $acf_source,
 								'{@acf_links}'				=> $acf_links,
@@ -121,16 +149,21 @@ class PSC_Pull_Entries {
 						// OUTPUT
 						$out .= strtr( $this->psc_get_video_view( $format, 'videos' ), $replace_array );
 
+						if( $maxout == $max_count ) {
+							break;
+						}
+
 					endwhile;
 
 					// reset WP Query
 					$this->psc_reset_query();
 
 				endif;
+
 			}
 
 		endif;
-
+		
 		return $out;
 
 	}
@@ -290,7 +323,7 @@ class PSC_Pull_Entries {
 	 */
 	public function psc_get_block_view( $layout, $folder ) {
 
-		$layout_file = psc_plugin_dir_path().'partials/'.$folder.'/'.$layout;
+		$layout_file = psc_plugin_dir_path_vids().'partials/'.$folder.'/'.$layout;
 
 		return file_get_contents( $layout_file );
 
@@ -302,7 +335,7 @@ class PSC_Pull_Entries {
 	 */
 	public function psc_get_video_view( $layout, $folder ) {
 
-	    $layout_file = psc_plugin_dir_path().'partials/'.$folder.'/'.$layout;
+	    $layout_file = psc_plugin_dir_path_vids().'partials/'.$folder.'/'.$layout;
 	    
 	    if( is_file( $layout_file ) ) {
 
@@ -328,6 +361,21 @@ class PSC_Pull_Entries {
 	public function psc_reset_query() {
 		wp_reset_postdata();
 		wp_reset_query();
+	}
+
+
+	/**
+	 * Simple array & key validation
+	 *
+	 */
+	public function psc_val_arr_key( $key, $array ) {
+
+		if( array_key_exists( $key, $array ) && !empty( $array[ $key ] ) ) {
+			return $array[ $key ];
+		} else {
+			return FALSE; // return nothing
+		}
+
 	}
 
 }
